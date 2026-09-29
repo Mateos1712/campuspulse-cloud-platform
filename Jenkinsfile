@@ -27,8 +27,10 @@ pipeline {
           set -eu
           IMAGE_TAG="$(cat .image-tag)"
           docker build --target test --tag "campuspulse-test:${IMAGE_TAG}" .
-          docker run --rm -v "$PWD:/workspace" -w /workspace "campuspulse-test:${IMAGE_TAG}" \
-            pytest -q --cov=app --cov-report=xml:coverage.xml --junitxml=test-results.xml
+          docker run --rm -e PYTHONPATH=/workspace \
+            -v "$PWD:/workspace" -w /workspace "campuspulse-test:${IMAGE_TAG}" \
+            pytest -q --cov=/workspace/app --cov-report=xml:coverage.xml \
+              --cov-fail-under=90 --junitxml=test-results.xml
         '''
       }
       post {

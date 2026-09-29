@@ -5,6 +5,21 @@ from app.main import app
 client = TestClient(app)
 
 
+def test_service_lifecycle_and_operational_endpoints() -> None:
+    with TestClient(app) as lifecycle_client:
+        root_response = lifecycle_client.get("/")
+        assert root_response.status_code == 200
+        assert root_response.json()["service"] == "campuspulse"
+
+        readiness_response = lifecycle_client.get("/readyz")
+        assert readiness_response.status_code == 200
+        assert readiness_response.json() == {"status": "ready"}
+
+        metrics_response = lifecycle_client.get("/metrics")
+        assert metrics_response.status_code == 200
+        assert "campuspulse_http_requests_total" in metrics_response.text
+
+
 def test_health_endpoint() -> None:
     response = client.get("/healthz")
     assert response.status_code == 200
@@ -42,4 +57,3 @@ def test_rejects_invalid_course_id() -> None:
         },
     )
     assert response.status_code == 422
-

@@ -1,0 +1,29 @@
+groups:
+  - name: campuspulse-slo
+    rules:
+      - alert: CampusPulseHighErrorRate
+        expr: |
+          sum(rate(campuspulse_http_requests_total{status=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(campuspulse_http_requests_total[5m])), 0.001)
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: CampusPulse error rate is above 5%
+          description: Investigate application logs and the latest deployment.
+
+      - alert: CampusPulseP95LatencyHigh
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(campuspulse_http_request_duration_seconds_bucket[5m]))
+          ) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: CampusPulse p95 latency is above 500 ms
+          description: Check resource saturation, dependencies and recent changes.
+

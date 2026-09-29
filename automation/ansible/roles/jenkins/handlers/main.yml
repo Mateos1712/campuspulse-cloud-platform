@@ -1,0 +1,7 @@
+---
+- name: Restart Jenkins
+  ansible.builtin.command:
+    cmd: docker compose up --detach --build --force-recreate
+    chdir: "{{ jenkins_home }}"
+  changed_when: true
+

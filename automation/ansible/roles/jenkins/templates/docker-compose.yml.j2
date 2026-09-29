@@ -1,0 +1,16 @@
+services:
+  jenkins:
+    build:
+      context: .
+    restart: unless-stopped
+    ports:
+      - "{{ jenkins_http_port }}:8080"
+      - "50000:50000"
+    group_add:
+      - "{{ ansible_facts.getent_group['docker'][1] }}"
+    volumes:
+      - jenkins_home:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+
+volumes:
+  jenkins_home:

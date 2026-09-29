@@ -1,0 +1,42 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: campuspulse-demo
+  region: us-east-1
+  tags:
+    Project: campuspulse
+    Environment: demo
+    ManagedBy: eksctl
+    Owner: amateos
+
+iam:
+  withOIDC: true
+
+vpc:
+  clusterEndpoints:
+    publicAccess: true
+    privateAccess: true
+
+managedNodeGroups:
+  - name: campuspulse-workers
+    instanceType: t3.small
+    minSize: 1
+    desiredCapacity: 1
+    maxSize: 2
+    spot: true
+    volumeSize: 20
+    volumeEncrypted: true
+    privateNetworking: false
+    labels:
+      workload: campuspulse
+    tags:
+      Project: campuspulse
+      Environment: demo
+
+addons:
+  - name: vpc-cni
+  - name: coredns
+  - name: kube-proxy
+  - name: metrics-server
+

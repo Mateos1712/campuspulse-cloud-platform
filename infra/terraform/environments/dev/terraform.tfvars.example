@@ -1,0 +1,8 @@
+aws_region     = "us-east-1"
+project_name   = "campuspulse"
+environment    = "dev"
+owner          = "amateos"
+enable_runtime = false
+image_tag      = "bootstrap"
+desired_count  = 1
+

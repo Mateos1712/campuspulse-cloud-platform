@@ -1,0 +1,21 @@
+image: python:3.12-slim
+
+pipelines:
+  pull-requests:
+    '**':
+      - step:
+          name: Fast pull-request checks
+          caches:
+            - pip
+          script:
+            - python -m pip install -e '.[dev]'
+            - ruff check .
+            - pytest -q
+
+  branches:
+    develop:
+      - step:
+          name: Jenkins owns build and deployment
+          script:
+            - echo "Bitbucket branch checks passed; Jenkins performs the full CI/CD pipeline."
+

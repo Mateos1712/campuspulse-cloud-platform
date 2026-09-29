@@ -1,0 +1,5 @@
+---
+jenkins_home: /opt/campuspulse-jenkins
+jenkins_http_port: 8080
+terraform_version: 1.14.8
+

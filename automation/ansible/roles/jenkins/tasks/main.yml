@@ -1,0 +1,65 @@
+---
+- name: Install host packages
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - docker.io
+      - docker-compose-v2
+      - git
+      - python3
+    state: present
+    update_cache: true
+
+- name: Enable and start Docker
+  ansible.builtin.systemd_service:
+    name: docker
+    enabled: true
+    state: started
+
+- name: Read Docker group information
+  ansible.builtin.getent:
+    database: group
+    key: docker
+
+- name: Create Jenkins project directory
+  ansible.builtin.file:
+    path: "{{ jenkins_home }}"
+    state: directory
+    owner: root
+    group: docker
+    mode: "0770"
+
+- name: Install Jenkins controller Dockerfile
+  ansible.builtin.template:
+    src: Dockerfile.j2
+    dest: "{{ jenkins_home }}/Dockerfile"
+    owner: root
+    group: docker
+    mode: "0640"
+  notify: Restart Jenkins
+
+- name: Install Jenkins plugin list
+  ansible.builtin.copy:
+    src: plugins.txt
+    dest: "{{ jenkins_home }}/plugins.txt"
+    owner: root
+    group: docker
+    mode: "0640"
+  notify: Restart Jenkins
+
+- name: Install Jenkins Compose definition
+  ansible.builtin.template:
+    src: docker-compose.yml.j2
+    dest: "{{ jenkins_home }}/docker-compose.yml"
+    owner: root
+    group: docker
+    mode: "0640"
+  notify: Restart Jenkins
+
+- name: Start Jenkins controller
+  ansible.builtin.command:
+    cmd: docker compose up --detach --build
+    chdir: "{{ jenkins_home }}"
+  register: jenkins_compose
+  changed_when: "'Started' in jenkins_compose.stdout or 'Created' in jenkins_compose.stdout"

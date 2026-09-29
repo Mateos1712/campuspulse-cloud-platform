@@ -1,0 +1,27 @@
+FROM jenkins/jenkins:lts-jdk21
+
+USER root
+
+RUN apt-get update \
+    && apt-get install --yes --no-install-recommends \
+      ca-certificates curl docker.io git jq python3 python3-pip python3-venv unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl --fail --show-error --location \
+      "https://releases.hashicorp.com/terraform/{{ terraform_version }}/terraform_{{ terraform_version }}_linux_amd64.zip" \
+      --output /tmp/terraform.zip \
+    && unzip /tmp/terraform.zip -d /usr/local/bin \
+    && rm /tmp/terraform.zip
+
+RUN curl --fail --show-error --location \
+      "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
+      --output /tmp/awscliv2.zip \
+    && unzip -q /tmp/awscliv2.zip -d /tmp \
+    && /tmp/aws/install \
+    && rm -rf /tmp/aws /tmp/awscliv2.zip
+
+COPY plugins.txt /usr/share/jenkins/ref/plugins.txt
+RUN jenkins-plugin-cli --plugin-file /usr/share/jenkins/ref/plugins.txt
+
+USER jenkins
+

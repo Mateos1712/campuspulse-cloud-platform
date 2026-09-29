@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+  push:
+    branches:
+      - develop
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Test, scan, and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v6
+
+      - name: Build test image
+        run: docker build --target test --tag "campuspulse-test:${{ github.sha }}" .
+
+      - name: Run tests with coverage gate
+        run: |
+          docker run --rm \
+            -e PYTHONPATH=/workspace \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "campuspulse-test:${{ github.sha }}" \
+            pytest -q --cov=/workspace/app --cov-report=term-missing \
+              --cov-fail-under=95
+
+      - name: Run Ruff
+        run: |
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "campuspulse-test:${{ github.sha }}" \
+            ruff check .
+
+      - name: Run Bandit
+        run: |
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            "campuspulse-test:${{ github.sha }}" \
+            bandit -q -r app
+
+      - name: Audit Python dependencies
+        run: docker run --rm "campuspulse-test:${{ github.sha }}" pip-audit
+
+      - name: Check Terraform formatting
+        run: |
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace/infra/terraform \
+            hashicorp/terraform:1.14.8 fmt -check -recursive
+
+      - name: Validate Terraform
+        run: |
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace/infra/terraform/environments/dev \
+            hashicorp/terraform:1.14.8 init -backend=false
+          docker run --rm \
+            -v "$PWD:/workspace" \
+            -w /workspace/infra/terraform/environments/dev \
+            hashicorp/terraform:1.14.8 validate
+
+      - name: Build runtime image
+        run: docker build --target runtime --tag "campuspulse:${{ github.sha }}" .

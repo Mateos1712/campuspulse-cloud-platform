@@ -6,7 +6,8 @@ ENV PIP_DISABLE_PIP_VERSION_CHECK=1 \
 WORKDIR /build
 COPY pyproject.toml README.md ./
 COPY app ./app
-RUN python -m pip install --prefix=/install .
+RUN python -m pip install --upgrade "pip>=26.2" \
+    && python -m pip install --prefix=/install .
 
 FROM builder AS test
 RUN python -m pip install -e '.[dev]'
